@@ -5,7 +5,7 @@ import logging
 class SriBot:
    def __init__(self, weights: dict) -> None:
       """
-      Initializer method for SriBot. Requires a dictionary of weights
+      Initializer method for SriBot instances. Requires a dictionary of weights
       to set up bot.
 
       Args:
@@ -37,13 +37,45 @@ class SriBot:
       self.positions: dict = rs.build_holdings()
       # Calculate total money invested
       self.positionsValue: float = sum((float(self.positions[symbol]['equity']) for symbol in self.positions.keys()))
+      
+   def rebalance(self):
+      """
+      Portfolio rebalancing method. Method analyzes user's current positions
+      and determines whether portfolio rebalancing is required (TODO: based on 
+      a threshold?). If rebalancing is required, overweight positions are 
+      trimmed and underweight positions are added to.
+      """
+      # Initialize dictionary to hold needed changes to portfolio
+      positionChanges = {k:0 for k in self.weights}
+      # Check if positions out-of-balance by ANY (TODO: change?) amount
+      for w in self.weights.items():
+         # Calculate ideal position value
+         idealAmount = w[1] * self.positionsValue
+         # Get current position value in portfolio
+         try:
+            currAmount = float(self.positions[w[0]]['equity'])
+         except KeyError:
+            currAmount = 0
+         # Calculate change needed in position value to reach ideal weighting
+         positionChanges[w[0]] -= currAmount - idealAmount
+            
+      # Execute trades based on required position changes
+      for stock in positionChanges.items():
+         # Overweight stock in portfolio
+         if stock[1] < 0:
+            rs.order_sell_fractional_by_price(symbol=stock[0], amountInDollars=abs(stock[1]),timeInForce='gfd',extendedHours=True)
+         # Underweight stock in portfolio
+         elif stock[1] > 0:
+            rs.order_buy_fractional_by_price(symbol=stock[0], amountInDollars=stock[1],timeInForce='gfd',extendedHours=True)
+            
 
 if __name__ == '__main__':
    try:
       # Test instance with sample weights
-      BOT = SriBot({'TSLA': 0.5, 'ARLP': 0.2, 'MSFT': 0.3})
+      BOT = SriBot({'JEPQ': 0.5, 'LLY': 0.2, 'UNH': 0.3})
+      BOT.rebalance()
    except Exception as e: 
-      logging.exception(f' {e}',exc_info=False)
+      logging.exception(f' {e}',exc_info=False) # TODO: reveal trace?
    
    # End current Robinhood session
    rs.logout()
