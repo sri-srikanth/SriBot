@@ -1,0 +1,3 @@
+# README
+
+Currently, SriBot is implemented using methods/functions from the Robin_stocks project (https://github.com/jmfernandes/robin_stocks). However, this project may soon be transitioning to using a different Robinhood Python Library due to some critical flaws with the current library being used. If the transition is not possible, the critical errors within the current library will be fixed by me before continuing to be used to power SriBot.
