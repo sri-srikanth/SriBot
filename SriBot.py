@@ -1,4 +1,4 @@
-import os, pyotp, time
+import os, pyotp, time, schedule
 import robin_stocks.robinhood as rs
 import logging
 
@@ -45,6 +45,7 @@ class SriBot:
       a threshold?). If rebalancing is required, overweight positions are 
       trimmed and underweight positions are added to.
       """
+      print("IN")
       # Initialize dictionary to hold needed changes to portfolio
       positionChanges = {k:0 for k in self.weights}
       # Check if positions out-of-balance by ANY (TODO: change?) amount
@@ -67,16 +68,20 @@ class SriBot:
          # Underweight stock in portfolio
          elif stock[1] > 0:
             rs.order_buy_fractional_by_price(symbol=stock[0], amountInDollars=stock[1],timeInForce='gfd',extendedHours=True)
-            
+      print("OUT")
 
 if __name__ == '__main__':
    try:
       # Test instance with sample weights
-      BOT = SriBot({'JEPQ': 0.5, 'LLY': 0.2, 'UNH': 0.3})
-      BOT.rebalance()
+      # BOT = SriBot({'JEPQ': 0.5, 'LLY': 0.2, 'UNH': 0.3})
+      BOT = SriBot({})
    except Exception as e: 
       logging.exception(f' {e}',exc_info=False) # TODO: reveal trace?
    
+   schedule.every().day.at('08:31').do(BOT.rebalance) # TODO: figure out how to stay logged in the entire time since RH cuts sessions at 1D
+   while True:
+      schedule.run_pending()
+      time.sleep(0.01)
    # End current Robinhood session
-   rs.logout()
-   print('DONE')
+   rs.logout() # TODO: incorporate into the scheduling loop
+   
